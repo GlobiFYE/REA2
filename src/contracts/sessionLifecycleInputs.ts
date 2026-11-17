@@ -13,6 +13,11 @@ import {
 } from "../domain/firmware/espFlashSelection.js";
 import { analysisProviderSelectorSchema } from "../domain/providerSelection.js";
 
+/** Caller-supplied dSYM bundle path; must name the bundle directory absolutely. */
+const dsymPathSchema = absoluteLocalPathStringSchema.describe(
+  "Absolute local filesystem path to a .dSYM bundle whose DWARF member carries the target image's LC_UUID; admitted only for Mach-O executable targets. Omitting it analyzes without debug types.",
+);
+
 /** Caller-supplied analysis snapshot path; must name its destination absolutely. */
 const snapshotPathSchema = absoluteLocalPathStringSchema.describe(
   "Absolute local filesystem path for the analysis snapshot; relative paths are rejected.",
@@ -54,8 +59,17 @@ export const openBinaryInputSchema = z
       ),
     provider_id: analysisProviderSelectorSchema.optional(),
     snapshot_path: snapshotPathSchema.optional(),
+    dsym_path: dsymPathSchema.optional(),
   })
   .superRefine((value, context) => {
+    if (value.dsym_path !== undefined && value.format !== undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["dsym_path"],
+        message:
+          "dsym_path applies only to detected Mach-O executable targets, not to explicit headerless formats",
+      });
+    }
     const flash = espFlashSelectionError({
       format: value.format,
       flashOffset:
@@ -133,6 +147,7 @@ export const openBinaryTargetSelection = (
     | "format"
     | "architecture"
     | "entry_point"
+    | "dsym_path"
     | "flash_offset"
     | "partition_table_offset"
   >,
@@ -142,6 +157,7 @@ export const openBinaryTargetSelection = (
     ? {}
     : { architecture: input.architecture }),
   ...(input.entry_point === undefined ? {} : { entryPoint: input.entry_point }),
+  ...(input.dsym_path === undefined ? {} : { dsymPath: input.dsym_path }),
   ...(input.flash_offset === undefined &&
   input.partition_table_offset === undefined
     ? {}
