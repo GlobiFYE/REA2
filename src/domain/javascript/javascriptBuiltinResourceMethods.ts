@@ -20,18 +20,34 @@ export const BUILTIN_RESOURCE_METHODS = {
  * `FileHandle` and a `net.Socket`/`TLSSocket` each expose only their own subset,
  * so a family-blind release list claims a teardown that throws instead.
  */
-export const BUILTIN_RESOURCE_RELEASE_METHODS = {
-  "fs:open": [],
-  "fs:openSync": [],
-  "fs:createReadStream": ["close", "destroy"],
-  "fs:createWriteStream": ["close", "destroy", "end"],
-  "fs/promises:open": ["close"],
-  "net:connect": ["destroy", "end"],
-  "net:createConnection": ["destroy", "end"],
-  "tls:connect": ["destroy", "end"],
-} as const satisfies Readonly<
-  Record<string, readonly ("close" | "destroy" | "end")[]>
->;
+type ReleaseMethod = "close" | "destroy" | "end";
+interface ReleaseMember {
+  readonly owner: "instance" | "prototype";
+  readonly delegates?: readonly ReleaseMethod[];
+}
+const inherited = { owner: "prototype" } as const;
+
+// Each entry lists the release methods looked up inside the native call.
+const releases: Readonly<
+  Record<string, Partial<Record<ReleaseMethod, ReleaseMember>>>
+> = {
+  "fs:createReadStream": {
+    close: { owner: "prototype", delegates: ["destroy"] },
+    destroy: inherited,
+  },
+  "fs:createWriteStream": {
+    close: { owner: "prototype", delegates: ["end", "destroy"] },
+    destroy: inherited,
+    end: inherited,
+  },
+  "fs/promises:open": { close: { owner: "instance" } },
+  "net:connect": { destroy: inherited, end: inherited },
+  "net:createConnection": { destroy: inherited, end: inherited },
+  "tls:connect": { destroy: inherited, end: inherited },
+};
+
+export const builtinResourceReleases = (specifier: string, method: string) =>
+  releases[`${specifier}:${method}`];
 
 export const BUILTIN_RESOURCE_SPECIFIERS = Object.keys(
   BUILTIN_RESOURCE_METHODS,
