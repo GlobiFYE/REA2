@@ -5,6 +5,7 @@ import type { CliSessionTarget } from "./contractCliDescription.js";
 
 /** Decimal integer argv text. Leading zeros stay decimal; `0x` and exponent spellings do not. */
 const DECIMAL_INTEGER_TOKEN = /^[0-9]+$/u;
+const DECIMAL_NUMBER_TOKEN = /^[0-9]+(?:\.[0-9]+)?$/u;
 
 type DecimalWrapper =
   | { readonly kind: "default"; readonly value: number | null }
@@ -16,7 +17,10 @@ type DecimalWrapper =
 const decimalToken = (domain: z.ZodNumber) =>
   z
     .string()
-    .regex(DECIMAL_INTEGER_TOKEN, "Expected a decimal integer")
+    .regex(
+      domain.isInt ? DECIMAL_INTEGER_TOKEN : DECIMAL_NUMBER_TOKEN,
+      domain.isInt ? "Expected a decimal integer" : "Expected a decimal number",
+    )
     .pipe(z.coerce.number<string>())
     .pipe(domain);
 
