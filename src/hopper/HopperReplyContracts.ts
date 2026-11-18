@@ -114,7 +114,7 @@ const callerScanTargetSchema = z.strictObject({
  * Bridge reply contracts, keyed by method and built from the shared native
  * domain schemas. A reply is validated once here, before any consumer reads it.
  */
-export const hopperReplySchemas = {
+const hopperReplySchemas = {
   address_name: nullableText,
   comment: nullableText,
   inline_comment: nullableText,

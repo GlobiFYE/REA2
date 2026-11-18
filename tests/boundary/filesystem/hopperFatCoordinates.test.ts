@@ -17,7 +17,7 @@ import { RegularFileCleanupFailure } from "../../../src/filesystem/OwnedRegularF
 import type { OwnedFileHandle } from "../../../src/filesystem/OwnedFileHandle.js";
 import { mapHopperFileOffset } from "../../../src/hopper/HopperFileOffset.js";
 import {
-  hopperReplySchemas,
+  hopperBridgeReplyContracts,
   parseHopperReply,
 } from "../../../src/hopper/HopperReplyContracts.js";
 import { resolveHopperMachOImage } from "../../../src/hopper/HopperMachOImage.js";
@@ -54,7 +54,7 @@ const mapOffset = (target: BinaryTarget, observation: JsonValue) => {
   const leases = new WeakMap<OwnedFileHandle, AnalysisCleanupLease>();
   onTestFinished(() => scope.close());
   const reply = parseHopperReply(
-    hopperReplySchemas,
+    hopperBridgeReplyContracts,
     "address_to_file_offset",
     observation,
     "address_to_file_offset",

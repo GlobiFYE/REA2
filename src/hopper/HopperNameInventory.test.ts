@@ -7,7 +7,7 @@ import { HopperProvider } from "./HopperProvider.js";
 
 import { projectHopperNameInventory } from "./HopperNameInventory.js";
 import {
-  hopperReplySchemas,
+  hopperBridgeReplyContracts,
   parseHopperReply as parseHopperReplyWith,
   type HopperReplyMethod,
 } from "./HopperReplyContracts.js";
@@ -26,7 +26,7 @@ const validatedReply =
   ) =>
     Promise.resolve(
       parseHopperReplyWith(
-        hopperReplySchemas,
+        hopperBridgeReplyContracts,
         method,
         reply,
         options?.operation ?? method,

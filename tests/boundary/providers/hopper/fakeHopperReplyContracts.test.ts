@@ -3,7 +3,7 @@ import { expect, it } from "vitest";
 
 import {
   parseHopperReply as parseHopperReplyWith,
-  hopperReplySchemas,
+  hopperBridgeReplyContracts,
   type HopperReplyMethod,
 } from "../../../../src/hopper/HopperReplyContracts.js";
 import {
@@ -15,10 +15,10 @@ const parseHopperReply = <M extends HopperReplyMethod>(
   method: M,
   value: JsonValue,
   operation: string = method,
-) => parseHopperReplyWith(hopperReplySchemas, method, value, operation);
+) => parseHopperReplyWith(hopperBridgeReplyContracts, method, value, operation);
 
 const isReplyMethod = (method: string): method is HopperReplyMethod =>
-  Object.hasOwn(hopperReplySchemas, method);
+  Object.hasOwn(hopperBridgeReplyContracts, method);
 
 // The packaged CLI baseline and provider fixtures run against this fake
 // bridge; a reply outside the real bridge's contract fails them as unreadable

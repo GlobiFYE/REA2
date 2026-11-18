@@ -13,7 +13,7 @@ import {
   hopperBridgeMethod,
   parseHopperReply as parseHopperReplyWith,
   HopperReplyContractError,
-  hopperReplySchemas,
+  hopperBridgeReplyContracts,
   type HopperReplyMethod,
   parseHopperServerInfo,
   parseHopperShutdownReply,
@@ -32,7 +32,7 @@ const validatedReply =
   ) =>
     Promise.resolve(
       parseHopperReplyWith(
-        hopperReplySchemas,
+        hopperBridgeReplyContracts,
         method,
         reply,
         options?.operation ?? method,
@@ -43,11 +43,11 @@ const parseHopperReply = <M extends HopperReplyMethod>(
   method: M,
   value: JsonValue,
   operation: string = method,
-) => parseHopperReplyWith(hopperReplySchemas, method, value, operation);
+) => parseHopperReplyWith(hopperBridgeReplyContracts, method, value, operation);
 
 it("gives every Hopper operation's bridge method a reply contract", () => {
   const missing = HOPPER_OPERATIONS.map(hopperBridgeMethod).filter(
-    (method) => !Object.hasOwn(hopperReplySchemas, method),
+    (method) => !Object.hasOwn(hopperBridgeReplyContracts, method),
   );
 
   expect(missing, "no Hopper reply reaches Evidence unvalidated").toEqual([]);

@@ -1,7 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { HopperRegexSearch } from "./HopperRegexSearch.js";
 import {
-  hopperReplySchemas,
+  hopperBridgeReplyContracts,
   parseHopperReply,
 } from "./HopperReplyContracts.js";
 import { err, ok } from "../domain/result.js";
@@ -112,7 +112,7 @@ it.each(["search_strings", "search_procedures"] as const)(
     const search = new HopperRegexSearch({
       callTool: async (method, _arguments, options) =>
         parseHopperReply(
-          hopperReplySchemas,
+          hopperBridgeReplyContracts,
           method,
           [
             {
