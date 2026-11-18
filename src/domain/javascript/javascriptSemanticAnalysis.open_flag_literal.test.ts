@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 
+import { graphForJavaScript } from "../../../tests/fixtures/javascriptSemanticGraph.js";
 import { analyzeJavaScriptSemantics } from "./javascriptSemanticAnalysis.js";
 
 /**
@@ -437,10 +438,43 @@ it.each([
  *   createWriteStream ignores `end`        -> stream even for `{end: -1}`
  *   flags / mode / autoClose are not validated eagerly
  */
+const streamRelationsFor = (options: string) =>
+  graphForJavaScript(
+    `const fs = require("node:fs"); const s = fs.createReadStream("i", ${options});`,
+  ).relations.map(
+    ({ relation, resolution }) => `${relation}/${resolution ?? ""}`,
+  );
+
 const streamAcquisitionsFor = (call: string) =>
   analyzeJavaScriptSemantics(
     `import fs from "node:fs";\nfunction g(p, opts, n) { ${call}; }`,
   ).resourceOperations.map(({ kind, method }) => ({ kind, method }));
+
+/**
+ * A unary operator over a BigInt literal is still a BigInt, and `import.meta` is
+ * always an object, so Node refuses both in these members before a handle exists
+ * — which is what separates them from a genuinely undecided member:
+ *
+ *   createReadStream(p, { start: -1n })         -> THREW ERR_INVALID_ARG_TYPE
+ *   createReadStream(p, { start: import.meta }) -> THREW ERR_INVALID_ARG_TYPE
+ *   createReadStream(p, { start: opts })        -> stream, acquisition retained
+ */
+it.each([
+  ["a negated BigInt start", `{ start: -1n }`],
+  ["a unary-plus BigInt end", `{ end: +1n }`],
+  ["an import.meta start", `{ start: import.meta }`],
+] as const)("emits no stream acquisition for %s", (_name, options) => {
+  // A refused member throws before the handle exists, so no acquisition — not even
+  // a candidate — survives. A candidate here would be the undecided path.
+  expect(streamRelationsFor(options)).not.toContain("acquires/candidate");
+  expect(streamRelationsFor(options)).not.toContain("acquires/resolved");
+});
+
+it("keeps an undecided member as a candidate", () => {
+  // The control: an unreadable member must not be dropped, or the check above
+  // could pass by simply emitting nothing.
+  expect(streamRelationsFor("{ start: opts }")).toContain("acquires/candidate");
+});
 
 it.each(["createReadStream", "createWriteStream"] as const)(
   "retains %s and its release when Object.prototype may intercept option copying",

@@ -279,6 +279,14 @@ const streamMemberValue = (
       value.operator === "delete"
     )
       return { kind: "refused" };
+    // A unary operator over a BigInt literal is still a BigInt, which Node refuses
+    // before a handle exists. `unaryOperandNumber` cannot read that operand, so
+    // without this the member would stay undecided and keep the acquisition.
+    if (
+      ["+", "-", "~"].includes(value.operator) &&
+      t.isBigIntLiteral(unwrapJavaScriptExpression(value.argument).node)
+    )
+      return { kind: "refused" };
     const number = unaryOperandNumber(value, context, 0);
     return number === undefined ? undefined : { kind: "number", value: number };
   }
@@ -309,7 +317,10 @@ const streamMemberValue = (
     t.isFunctionExpression(value) ||
     t.isArrowFunctionExpression(value) ||
     t.isClassExpression(value) ||
-    t.isRegExpLiteral(value)
+    t.isRegExpLiteral(value) ||
+    // `import.meta` is always an object in a module, so Node refuses it in these
+    // members just as it refuses a literal object.
+    (t.isMetaProperty(value) && value.meta.name === "import")
   )
     return { kind: "refused" };
   return undefined;
