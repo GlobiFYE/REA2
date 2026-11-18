@@ -214,6 +214,32 @@ describe("unwrapDesktopCommand", () => {
     ).toEqual([["__proto__", "x"]]);
   });
 
+  it.each([
+    [["-u", "VARIABLE"]],
+    [["--unset", "VARIABLE"]],
+    [["-uVARIABLE"]],
+    [["--unset=VARIABLE"]],
+  ])("keeps the Flatpak argument boundary after env %j", (option) => {
+    const argv = [
+      "env",
+      ...option,
+      "flatpak",
+      "run",
+      "--branch",
+      "beta",
+      "org.example.Notes",
+      "-u",
+    ];
+    const wrapper = unwrapDesktopCommand(argv);
+    expect(wrapper).toMatchObject({
+      kind: "flatpak",
+      application_id: "org.example.Notes",
+    });
+    expect(Object.hasOwn(wrapper.environment, "VARIABLE")).toBe(true);
+    expect(wrapper.environment.VARIABLE).toBeUndefined();
+    expect(argv.slice(wrapper.argumentIndex)).toEqual(["-u"]);
+  });
+
   it("recognises flatpak launchers and their application id", () => {
     expect(
       unwrapDesktopCommand([
